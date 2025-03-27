@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Resale Price Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f9f9f9;
+        color: #333;
+      }
+
+      h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+
+      .summary-cards {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .card {
+        flex: 1;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #7f8c8d;
+      }
+
+      .card h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+
+      .card p {
+        font-size: 14.5px;
+        line-height: 1.5;
+        color: #555;
+      }
+
+      .container {
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+      }
+
+      .chart-container {
+        flex: 2;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .controls {
+        flex: 1;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-title {
+        font-weight: bold;
+        margin-top: 10px;
+        margin-bottom: 5px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fefefe;
+      }
+
+      .checkbox-group label {
+        background: #eee;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 14px;
+      }
+
+      .checkbox-group input[type='checkbox'] {
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Impact of Singapore's Internet Companies on HDB Resale Prices</h2>
+
+    <div class="summary-cards">
+      <div class="card">
+        <h3>Hypothesis</h3>
+        <p>
+          Since 2017, tech companies like Shopee and TikTok have hired large
+          numbers of foreign software engineers. Many obtain PR status within
+          1–2 years and become eligible to purchase HDB flats or private
+          property. While both Queenstown and Bukit Merah had similar resale
+          prices in 2017, Queenstown's quieter environment and proximity to the
+          MRT green line may make it more attractive to tech workers. We
+          hypothesise that this led to a sharper price increase in Queenstown
+          over time.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Findings</h3>
+        <p>
+          Despite Bukit Merah being geographically closer to the CBD and
+          Chinatown, Queenstown experienced higher resale price growth from 2017
+          to 2025. This supports the hypothesis that lifestyle preferences—such
+          as quieter surroundings and direct green line MRT access—can influence
+          settlement patterns among foreign tech workers and, in turn, shape
+          housing demand and pricing.
+        </p>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="chart-container">
+        <canvas id="lineChart" width="800" height="400"></canvas>
+        <canvas
+          id="growthChart"
+          width="800"
+          height="300"
+          style="margin-top: 10px"
+        ></canvas>
+      </div>
+      <div class="controls">
+        <div class="section-title">Select towns:</div>
+        <div id="townCheckboxes" class="checkbox-group">
+          <label><input type="checkbox" value="ANG MO KIO" /> ANG MO KIO</label>
+          <label><input type="checkbox" value="BEDOK" /> BEDOK</label>
+          <label><input type="checkbox" value="BISHAN" /> BISHAN</label>
+          <label
+            ><input type="checkbox" value="BUKIT BATOK" /> BUKIT BATOK</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT MERAH" checked/> BUKIT
+            MERAH</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT PANJANG" /> BUKIT
+            PANJANG</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT TIMAH" /> BUKIT TIMAH</label
+          >
+          <label
+            ><input type="checkbox" value="CENTRAL AREA" /> CENTRAL AREA</label
+          >
+          <label
+            ><input type="checkbox" value="CHOA CHU KANG" /> CHOA CHU
+            KANG</label
+          >
+          <label><input type="checkbox" value="CLEMENTI" /> CLEMENTI</label>
+          <label><input type="checkbox" value="GEYLANG" /> GEYLANG</label>
+          <label><input type="checkbox" value="HOUGANG" /> HOUGANG</label>
+          <label
+            ><input type="checkbox" value="JURONG EAST" /> JURONG EAST</label
+          >
+          <label
+            ><input type="checkbox" value="JURONG WEST" /> JURONG WEST</label
+          >
+          <label
+            ><input type="checkbox" value="KALLANG/WHAMPOA" />
+            KALLANG/WHAMPOA</label
+          >
+          <label
+            ><input type="checkbox" value="MARINE PARADE" /> MARINE
+            PARADE</label
+          >
+          <label><input type="checkbox" value="PASIR RIS" /> PASIR RIS</label>
+          <label><input type="checkbox" value="PUNGGOL" /> PUNGGOL</label>
+          <label
+            ><input type="checkbox" value="QUEENSTOWN" checked />
+            QUEENSTOWN</label
+          >
+          <label><input type="checkbox" value="SEMBAWANG" /> SEMBAWANG</label>
+          <label><input type="checkbox" value="SENGKANG" /> SENGKANG</label>
+          <label><input type="checkbox" value="SERANGOON" /> SERANGOON</label>
+          <label><input type="checkbox" value="TAMPINES" /> TAMPINES</label>
+          <label><input type="checkbox" value="TOA PAYOH" /> TOA PAYOH</label>
+          <label><input type="checkbox" value="WOODLANDS" /> WOODLANDS</label>
+          <label><input type="checkbox" value="YISHUN" /> YISHUN</label>
+        </div>
+
+        <div class="section-title">Select remaining lease range:</div>
+        <div class="checkbox-group" id="leaseCheckboxes">
+          <label><input type="checkbox" value="50-60" checked /> 50–60</label>
+          <label><input type="checkbox" value="60-70" checked /> 60–70</label>
+          <label><input type="checkbox" value="70-80" checked /> 70–80</label>
+          <label><input type="checkbox" value="80-90" checked /> 80–90</label>
+          <label><input type="checkbox" value="90-99" checked /> 90–99</label>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let rawData = []
+
+      const colourPalette = [
+        'rgba(255, 99, 132, 0.4)', // 柔红
+        'rgba(54, 162, 235, 0.4)', // 柔蓝
+        'rgba(255, 206, 86, 0.4)', // 柔黄
+        'rgba(75, 192, 192, 0.4)', // 青绿
+        'rgba(153, 102, 255, 0.4)', // 紫
+        'rgba(255, 159, 64, 0.4)', // 橙
+        'rgba(255, 120, 203, 0.4)', // 粉
+        'rgba(140, 200, 255, 0.4)', // 蓝灰
+        'rgba(100, 255, 218, 0.4)', // 蓝绿
+        'rgba(240, 128, 128, 0.4)', // 浅红
+        'rgba(200, 200, 255, 0.4)',
+        'rgba(255, 210, 200, 0.4)',
+        'rgba(200, 255, 200, 0.4)',
+        'rgba(250, 250, 150, 0.4)',
+        'rgba(230, 150, 255, 0.4)',
+        'rgba(180, 255, 255, 0.4)',
+        'rgba(255, 200, 255, 0.4)',
+        'rgba(210, 255, 180, 0.4)',
+        'rgba(255, 245, 180, 0.4)',
+        'rgba(200, 230, 255, 0.4)',
+        'rgba(180, 180, 180, 0.4)',
+        'rgba(220, 220, 255, 0.4)',
+        'rgba(255, 220, 220, 0.4)',
+        'rgba(210, 255, 210, 0.4)',
+        'rgba(255, 255, 210, 0.4)',
+        'rgba(230, 230, 255, 0.4)',
+      ]
+
+      // 用 Map 来分配固定颜色给每个 town（顺序一致）
+      const townColours = new Map()
+
+      function getColourByTown(town) {
+        if (!townColours.has(town)) {
+          const index = townColours.size % colourPalette.length
+          townColours.set(town, colourPalette[index])
+        }
+        return townColours.get(town)
+      }
+
+      const leaseRanges = {
+        '50-60': [50, 60],
+        '60-70': [60, 70],
+        '70-80': [70, 80],
+        '80-90': [80, 90],
+        '90-99': [90, 99],
+      }
+
+      d3.csv('data.csv', d3.autoType).then((data) => {
+        rawData = data
+
+        document
+          .getElementById('townCheckboxes')
+          .addEventListener('change', renderAllCharts)
+        document
+          .getElementById('leaseCheckboxes')
+          .addEventListener('change', renderAllCharts)
+
+        renderAllCharts() // 初始渲染
+      })
+
+      let chartInstance = null
+      let growthChartInstance = null
+
+      function getSelectedData() {
+        const selectedTowns = Array.from(
+          document.querySelectorAll('#townCheckboxes input:checked')
+        ).map((cb) => cb.value)
+
+        const selectedRanges = Array.from(
+          document.querySelectorAll('#leaseCheckboxes input:checked')
+        ).map((cb) => leaseRanges[cb.value])
+
+        const filteredData = rawData.filter((d) => {
+          return selectedRanges.some(
+            ([min, max]) =>
+              d.remaining_lease_year >= min && d.remaining_lease_year < max
+          )
+        })
+
+        return { selectedTowns, filteredData }
+      }
+
+      function renderLineChart(selectedTowns, filteredData) {
+        const yearList = [...new Set(filteredData.map((d) => d.year))].sort(
+          (a, b) => a - b
+        )
+
+        const datasets = selectedTowns.map((town) => {
+          const townData = filteredData.filter((d) => d.town === town)
+          const grouped = d3.rollup(
+            townData,
+            (v) => d3.mean(v, (d) => d.resale_price),
+            (d) => d.year
+          )
+
+          const values = yearList.map((year) => grouped.get(year) ?? null)
+
+          return {
+            label: town,
+            data: values,
+            borderColor: getColourByTown(town),
+            backgroundColor: getColourByTown(town),
+            borderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            fill: false,
+            tension: 0.3,
+          }
+        })
+
+        if (chartInstance) chartInstance.destroy()
+        const ctx = document.getElementById('lineChart').getContext('2d')
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: yearList,
+            datasets: datasets,
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Average Resale Price by Town' },
+            },
+            scales: {
+              y: {
+                title: { display: true, text: 'Average Resale Price (SGD)' },
+              },
+              x: { title: { display: true, text: 'Year' } },
+            },
+          },
+        })
+      }
+
+      function renderGrowthChart(selectedTowns, filteredData) {
+        const yearList = [...new Set(filteredData.map((d) => d.year))].sort(
+          (a, b) => a - b
+        )
+
+        const datasets = selectedTowns.map((town) => {
+          const townData = filteredData.filter((d) => d.town === town)
+          const grouped = d3.rollup(
+            townData,
+            (v) => d3.mean(v, (d) => d.resale_price),
+            (d) => d.year
+          )
+
+          const values = yearList.map((year) => grouped.get(year) ?? null)
+
+          const growth = []
+          for (let i = 1; i < values.length; i++) {
+            const prev = values[i - 1]
+            const curr = values[i]
+            if (prev != null && curr != null) {
+              growth.push((((curr - prev) / prev) * 100).toFixed(2))
+            } else {
+              growth.push(null)
+            }
+          }
+
+          return {
+            label: town,
+            data: growth,
+            backgroundColor: getColourByTown(town),
+            borderColor: getColourByTown(town),
+            borderWidth: 1,
+          }
+        })
+
+        const growthYears = yearList.slice(1)
+
+        if (growthChartInstance) growthChartInstance.destroy()
+        const ctx = document.getElementById('growthChart').getContext('2d')
+        growthChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: growthYears,
+            datasets: datasets,
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Year-on-Year Growth Rate (%)' },
+              tooltip: {
+                callbacks: {
+                  label: (context) =>
+                    `${context.dataset.label}: ${context.raw}%`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                title: { display: true, text: 'Growth Rate (%)' },
+                ticks: { callback: (val) => val + '%' },
+              },
+              x: {
+                title: { display: true, text: 'Year' },
+              },
+            },
+          },
+        })
+      }
+
+      function renderAllCharts() {
+        const { selectedTowns, filteredData } = getSelectedData()
+        if (selectedTowns.length === 0) return
+        renderLineChart(selectedTowns, filteredData)
+        renderGrowthChart(selectedTowns, filteredData)
+      }
+    </script>
+  </body>
+</html>
