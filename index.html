@@ -99,6 +99,48 @@
       .checkbox-group input[type='checkbox'] {
         margin-right: 6px;
       }
+
+      .town-actions {
+        margin-bottom: 10px;
+      }
+
+      .town-actions button {
+        padding: 6px 12px;
+        margin-right: 10px;
+        border: none;
+        border-radius: 6px;
+        background-color: #3498db;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .town-actions button:hover {
+        background-color: #2980b9;
+      }
+
+      /* 自定义复选框样式 */
+      .checkbox-group label {
+        position: relative;
+        padding-left: 28px;
+        background: #f2f2f2;
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 14px;
+        line-height: 1.5;
+        display: flex;
+        align-items: center;
+      }
+
+      .checkbox-group input[type='checkbox'] {
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        accent-color: #2ecc71; /* 现代浏览器支持的复选框颜色 */
+      }
     </style>
   </head>
   <body>
@@ -108,28 +150,18 @@
       <div class="card">
         <h3>Hypothesis</h3>
         <p>
-          Since 2017, tech companies like Shopee and TikTok have hired large
-          numbers of foreign software engineers. Many obtain PR status within
-          1–2 years and become eligible to purchase HDB flats or private
-          property. While both Queenstown and Bukit Merah had similar resale
-          prices in 2017, Queenstown's quieter environment and proximity to the
-          MRT green line may make it more attractive to tech workers. We
-          hypothesise that this led to a sharper price increase in Queenstown
-          over time.
+          The influx of tech workers—especially foreign hires from companies like Shopee and TikTok—may influence local housing markets. These workers often obtain PR within 1–2 years, becoming eligible to purchase HDB flats or private property. Anecdotal patterns suggest that many prefer to live in Queenstown due to its quiet surroundings and direct access to the MRT green line. This study explores whether such hiring trends correlate with resale price growth in specific towns.
         </p>
       </div>
       <div class="card">
         <h3>Findings</h3>
         <p>
-          Despite Bukit Merah being geographically closer to the CBD and
-          Chinatown, Queenstown experienced higher resale price growth from 2017
-          to 2025. This supports the hypothesis that lifestyle preferences—such
-          as quieter surroundings and direct green line MRT access—can influence
-          settlement patterns among foreign tech workers and, in turn, shape
-          housing demand and pricing.
+          1. In 2017, Queenstown and Bukit Merah had comparable average resale prices. However, within five years, Queenstown’s prices increased more rapidly. A possible reason is that Bukit Merah’s proximity to Chinatown and the city centre may make it less appealing to tech workers who value quieter environments.<br><br>
+          2. Queenstown’s resale prices initially trailed those of the Central Area, but within five years, it surpassed them. This reversal further supports the hypothesis that tech hiring patterns and lifestyle preferences can significantly shape neighbourhood-level price trends.
         </p>
       </div>
     </div>
+    
 
     <div class="container">
       <div class="chart-container">
@@ -143,6 +175,10 @@
       </div>
       <div class="controls">
         <div class="section-title">Select towns:</div>
+        <div class="town-actions">
+          <button onclick="selectAllTowns()">Select All</button>
+          <button onclick="deselectAllTowns()">Deselect All</button>
+        </div>
         <div id="townCheckboxes" class="checkbox-group">
           <label><input type="checkbox" value="ANG MO KIO" /> ANG MO KIO</label>
           <label><input type="checkbox" value="BEDOK" /> BEDOK</label>
@@ -162,7 +198,7 @@
             ><input type="checkbox" value="BUKIT TIMAH" /> BUKIT TIMAH</label
           >
           <label
-            ><input type="checkbox" value="CENTRAL AREA" /> CENTRAL AREA</label
+            ><input type="checkbox" value="CENTRAL AREA" checked /> CENTRAL AREA</label
           >
           <label
             ><input type="checkbox" value="CHOA CHU KANG" /> CHOA CHU
@@ -213,6 +249,21 @@
 
     <script>
       let rawData = []
+
+      function selectAllTowns() {
+        document
+          .querySelectorAll('#townCheckboxes input[type="checkbox"]')
+          .forEach((cb) => (cb.checked = true))
+        renderAllCharts()
+      }
+
+      function deselectAllTowns() {
+        document
+          .querySelectorAll('#townCheckboxes input[type="checkbox"]')
+          .forEach((cb) => (cb.checked = false))
+        console.log('Deselecting all towns')
+        renderAllCharts()
+      }
 
       const colourPalette = [
         'rgba(255, 99, 132, 0.4)', // 柔红
@@ -419,6 +470,14 @@
 
       function renderAllCharts() {
         const { selectedTowns, filteredData } = getSelectedData()
+
+        // ⛔️ 如果没有选中任何城镇，就清空图表
+        if (selectedTowns.length === 0) {
+          if (chartInstance) chartInstance.destroy()
+          if (growthChartInstance) growthChartInstance.destroy()
+          return
+        }
+
         if (selectedTowns.length === 0) return
         renderLineChart(selectedTowns, filteredData)
         renderGrowthChart(selectedTowns, filteredData)
