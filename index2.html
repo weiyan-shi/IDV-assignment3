@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Resale Price Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f9f9f9;
+      }
+
+      .container {
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+      }
+
+      .chart-container {
+        flex: 2;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .controls {
+        flex: 1;
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .section-title {
+        font-weight: bold;
+        margin-top: 10px;
+        margin-bottom: 5px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fefefe;
+      }
+
+      .checkbox-group label {
+        background: #eee;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 14px;
+      }
+
+      .checkbox-group input[type='checkbox'] {
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Resale Price Comparison by Town (2017–2025)</h2>
+    <div class="container">
+      <div class="chart-container">
+        <canvas id="lineChart" width="800" height="400"></canvas>
+        <canvas id="growthChart" width="800" height="300" style="margin-top: 40px;"></canvas>
+      </div>
+      <div class="controls">
+        <div class="section-title">Select up to 2 towns:</div>
+        <div id="townCheckboxes" class="checkbox-group">
+          <label><input type="checkbox" value="ANG MO KIO" /> ANG MO KIO</label>
+          <label><input type="checkbox" value="BEDOK" /> BEDOK</label>
+          <label><input type="checkbox" value="BISHAN" /> BISHAN</label>
+          <label
+            ><input type="checkbox" value="BUKIT BATOK" /> BUKIT BATOK</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT MERAH" /> BUKIT MERAH</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT PANJANG" /> BUKIT
+            PANJANG</label
+          >
+          <label
+            ><input type="checkbox" value="BUKIT TIMAH" /> BUKIT TIMAH</label
+          >
+          <label
+            ><input type="checkbox" value="CENTRAL AREA" /> CENTRAL AREA</label
+          >
+          <label
+            ><input type="checkbox" value="CHOA CHU KANG" /> CHOA CHU
+            KANG</label
+          >
+          <label><input type="checkbox" value="CLEMENTI" /> CLEMENTI</label>
+          <label><input type="checkbox" value="GEYLANG" /> GEYLANG</label>
+          <label><input type="checkbox" value="HOUGANG" /> HOUGANG</label>
+          <label
+            ><input type="checkbox" value="JURONG EAST" /> JURONG EAST</label
+          >
+          <label
+            ><input type="checkbox" value="JURONG WEST" /> JURONG WEST</label
+          >
+          <label
+            ><input type="checkbox" value="KALLANG/WHAMPOA" />
+            KALLANG/WHAMPOA</label
+          >
+          <label
+            ><input type="checkbox" value="MARINE PARADE" /> MARINE
+            PARADE</label
+          >
+          <label><input type="checkbox" value="PASIR RIS" /> PASIR RIS</label>
+          <label><input type="checkbox" value="PUNGGOL" /> PUNGGOL</label>
+          <label
+            ><input type="checkbox" value="QUEENSTOWN" checked />
+            QUEENSTOWN</label
+          >
+          <label><input type="checkbox" value="SEMBAWANG" /> SEMBAWANG</label>
+          <label><input type="checkbox" value="SENGKANG" /> SENGKANG</label>
+          <label><input type="checkbox" value="SERANGOON" /> SERANGOON</label>
+          <label><input type="checkbox" value="TAMPINES" /> TAMPINES</label>
+          <label><input type="checkbox" value="TOA PAYOH" /> TOA PAYOH</label>
+          <label><input type="checkbox" value="WOODLANDS" /> WOODLANDS</label>
+          <label><input type="checkbox" value="YISHUN" checked /> YISHUN</label>
+        </div>
+
+        <div class="section-title">Select remaining lease range:</div>
+        <div class="checkbox-group" id="leaseCheckboxes">
+          <label><input type="checkbox" value="50-60" checked /> 50–60</label>
+          <label><input type="checkbox" value="60-70" checked /> 60–70</label>
+          <label><input type="checkbox" value="70-80" checked /> 70–80</label>
+          <label><input type="checkbox" value="80-90" checked /> 80–90</label>
+          <label><input type="checkbox" value="90-99" checked /> 90–99</label>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let rawData = []
+      let chartInstance = null
+
+      const leaseRanges = {
+        '50-60': [50, 60],
+        '60-70': [60, 70],
+        '70-80': [70, 80],
+        '80-90': [80, 90],
+        '90-99': [90, 99],
+      }
+
+      d3.csv('data.csv', d3.autoType).then((data) => {
+        rawData = data
+        document
+          .getElementById('townCheckboxes')
+          .addEventListener('change', handleTownSelection)
+        document
+          .getElementById('leaseCheckboxes')
+          .addEventListener('change', renderChart)
+        renderChart() // 初始渲染默认选中的两个
+      })
+
+      function handleTownSelection() {
+        // const checked = document.querySelectorAll('#townCheckboxes input:checked');
+        // if (checked.length > 2) {
+        //   // Remove the earliest one
+        //   checked[0].checked = false;
+        // }
+        renderChart()
+      }
+
+      function renderChart() {
+        const selectedTowns = Array.from(
+          document.querySelectorAll('#townCheckboxes input:checked')
+        ).map((cb) => cb.value)
+        const selectedRanges = Array.from(
+          document.querySelectorAll('#leaseCheckboxes input:checked')
+        ).map((cb) => leaseRanges[cb.value])
+
+        if (selectedTowns.length === 0) return
+
+        const filteredData = rawData.filter((d) => {
+          return selectedRanges.some(
+            ([min, max]) =>
+              d.remaining_lease_year >= min && d.remaining_lease_year < max
+          )
+        })
+
+        const datasets = selectedTowns.map((town) => {
+          const townData = filteredData.filter((d) => d.town === town)
+
+          const grouped = d3.rollup(
+            townData,
+            (v) => d3.mean(v, (d) => d.resale_price),
+            (d) => d.year
+          )
+
+          const years = Array.from(grouped.keys()).sort((a, b) => a - b)
+          const values = years.map((year) => grouped.get(year))
+
+          return {
+            label: town,
+            data: values,
+            borderWidth: 3, // 更粗的线
+            pointRadius: 5, // 节点大小
+            pointHoverRadius: 8, // 鼠标悬停时放大点
+            fill: false,
+            tension: 0.3,
+          }
+        })
+
+        const labels = [...new Set(filteredData.map((d) => d.year))].sort(
+          (a, b) => a - b
+        )
+
+        if (chartInstance) chartInstance.destroy()
+        const ctx = document.getElementById('lineChart').getContext('2d')
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: datasets,
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Average Resale Price by Town' },
+            },
+            scales: {
+              y: {
+                title: { display: true, text: 'Average Resale Price (SGD)' },
+              },
+              x: { title: { display: true, text: 'Year' } },
+            },
+          },
+        })
+      }
+    </script>
+  </body>
+</html>
